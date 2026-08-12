@@ -148,7 +148,7 @@ jobs:
 
           repository: JitenPalaparthi/bmw-java-demo-k8s-deployment
 
-          token: ${{ secrets.DEPLOY_REPO_TOKEN }}
+          token: ${{ secrets.DEPLOYMENT_TOKEN }}
 
           path: deployment-repo
 # ----------------------------------------
