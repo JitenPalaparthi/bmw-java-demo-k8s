@@ -42,7 +42,7 @@ jobs:
       # ----------------------------------------
       - name: Build application
         run: |
-          ./mvnw clean package -DskipTests
+          ./mvn clean package -DskipTests
 
       # ----------------------------------------
       # Verify JAR
