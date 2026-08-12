@@ -103,8 +103,8 @@ jobs:
       - name: Build Docker image
         run: |
           docker build \
-            --tag "ghcr.io/${{ steps.metadata.outputs.owner_lower }}/bwm-java-demo-k8s:${{ steps.metadata.outputs.tag_name }}" \
-            --tag "ghcr.io/${{ steps.metadata.outputs.owner_lower }}/bwm-java-demo-k8s:latest" \
+            --tag "ghcr.io/${{ steps.metadata.outputs.owner_lower }}/bmw-java-demo-k8s:${{ steps.metadata.outputs.tag_name }}" \
+            --tag "ghcr.io/${{ steps.metadata.outputs.owner_lower }}/bmw-java-demo-k8s:latest" \
             .
 
       # ----------------------------------------
@@ -113,7 +113,7 @@ jobs:
       - name: Push version image
         run: |
           docker push \
-            "ghcr.io/${{ steps.metadata.outputs.owner_lower }}/bwm-java-demo-k8s:${{ steps.metadata.outputs.tag_name }}"
+            "ghcr.io/${{ steps.metadata.outputs.owner_lower }}/bmw-java-demo-k8s:${{ steps.metadata.outputs.tag_name }}"
 
       # ----------------------------------------
       # Push latest
@@ -121,7 +121,7 @@ jobs:
       - name: Push latest image
         run: |
           docker push \
-            "ghcr.io/${{ steps.metadata.outputs.owner_lower }}/bwm-java-demo-k8s:latest"
+            "ghcr.io/${{ steps.metadata.outputs.owner_lower }}/bmw-java-demo-k8s:latest"
 
       # ----------------------------------------
       # Deployment repo work
@@ -163,7 +163,7 @@ jobs:
 
         run: |
 
-          IMAGE="ghcr.io/${{ steps.metadata.outputs.owner_lower }}/bwm-java-demo-k8s:${{ steps.metadata.outputs.tag_name }}"
+          IMAGE="ghcr.io/${{ steps.metadata.outputs.owner_lower }}/bmw-java-demo-k8s:${{ steps.metadata.outputs.tag_name }}"
 
           echo "Updating image to:"
 
@@ -171,7 +171,7 @@ jobs:
 
           sed -i \
 
-            "s|image: .*bwm-java-demo-k8s:.*|image: $IMAGE|" \
+            "s|image: .*bmw-java-demo-k8s:.*|image: $IMAGE|" \
 
             deployment-repo/k8s/05-java-deployment.yaml
 
@@ -209,6 +209,6 @@ jobs:
 
           git commit \
 
-            -m "Deploy bwm-java-demo-k8s:${{ steps.metadata.outputs.tag_name }}"
+            -m "Deploy bmw-java-demo-k8s:${{ steps.metadata.outputs.tag_name }}"
 
           git push
