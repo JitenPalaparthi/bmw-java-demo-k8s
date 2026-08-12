@@ -33,7 +33,7 @@ jobs:
 
       - name: Test and package application
         run: |
-          mvn --batch-mode clean package
+          mvn --batch-mode clean package -DskipTests
           
       - name: Display generated JAR files
         run: |

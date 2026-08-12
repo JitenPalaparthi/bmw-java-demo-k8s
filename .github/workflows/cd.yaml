@@ -99,3 +99,9 @@ jobs:
 
           docker push \
             "ghcr.io/${{ steps.metadata.outputs.owner_lower }}/bwm-java-demo-k8s:latest"
+      
+      - name: Checkout Deployment Repo
+        run: echo "checked out"
+
+      - name: Change tag in Deployment repo
+        run: echo "change tag"
