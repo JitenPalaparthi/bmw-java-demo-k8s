@@ -1,51 +1,56 @@
 name: Deploy Publish Image
 
 on:
-  workflow_run:
-    workflows:
-      - "Build Java CRUD application with postgres db"
-    types:
-      - completed
+  push:
+    tags:
+      - "v*"
 
 permissions:
   contents: read
-  actions: read
   packages: write
 
 jobs:
   deploy:
-    if: >
-      github.event.workflow_run.conclusion == 'success' &&
-      startsWith(github.event.workflow_run.head_branch, 'v')
-
     runs-on: ubuntu-latest
 
     steps:
-      - name: Display triggering workflow information
+      - name: Display tag information
         run: |
-          echo "Workflow name: ${{ github.event.workflow_run.name }}"
-          echo "Run ID:        ${{ github.event.workflow_run.id }}"
-          echo "Commit SHA:    ${{ github.event.workflow_run.head_sha }}"
-          echo "Tag or branch: ${{ github.event.workflow_run.head_branch }}"
-          echo "Conclusion:    ${{ github.event.workflow_run.conclusion }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "Commit SHA: ${{ github.sha }}"
+          echo "Git ref:     ${{ github.ref }}"
+          echo "Tag:         ${{ github.ref_name }}"
 
+      # ----------------------------------------
+      # Checkout source at the exact tag
+      # ----------------------------------------
       - name: Checkout tagged source code
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.workflow_run.head_sha }}
 
-      - name: Download JAR from build workflow
-        uses: actions/download-artifact@v5
+      # ----------------------------------------
+      # Setup Java
+      # ----------------------------------------
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
-          name: spring-boot-jar
-          path: target
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: ${{ github.event.workflow_run.id }}
+          distribution: temurin
+          java-version: "21"
+          cache: maven
 
-      - name: Verify downloaded JAR
+      # ----------------------------------------
+      # Build Spring Boot JAR
+      # ----------------------------------------
+      - name: Build application
+        run: |
+          ./mvnw clean package -DskipTests
+
+      # ----------------------------------------
+      # Verify JAR
+      # ----------------------------------------
+      - name: Verify generated JAR
         shell: bash
         run: |
-          echo "Downloaded files:"
+          echo "Generated files:"
           find target -maxdepth 2 -type f -print
 
           JAR_FILE=$(find target \
@@ -64,6 +69,9 @@ jobs:
 
           echo "JAR file found: $JAR_FILE"
 
+      # ----------------------------------------
+      # Login to GHCR
+      # ----------------------------------------
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -71,11 +79,15 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # ----------------------------------------
+      # Generate image metadata
+      # ----------------------------------------
       - name: Generate Docker image metadata
         id: metadata
         shell: bash
         run: |
-          TAG_NAME="${{ github.event.workflow_run.head_branch }}"
+          TAG_NAME="${{ github.ref_name }}"
+
           OWNER_LOWER=$(echo "${{ github.repository_owner }}" \
             | tr '[:upper:]' '[:lower:]')
 
@@ -85,6 +97,9 @@ jobs:
           echo "Docker tag: $TAG_NAME"
           echo "GHCR owner: $OWNER_LOWER"
 
+      # ----------------------------------------
+      # Build image
+      # ----------------------------------------
       - name: Build Docker image
         run: |
           docker build \
@@ -92,16 +107,29 @@ jobs:
             --tag "ghcr.io/${{ steps.metadata.outputs.owner_lower }}/bwm-java-demo-k8s:latest" \
             .
 
-      - name: Push images to GHCR
+      # ----------------------------------------
+      # Push version tag
+      # ----------------------------------------
+      - name: Push version image
         run: |
           docker push \
             "ghcr.io/${{ steps.metadata.outputs.owner_lower }}/bwm-java-demo-k8s:${{ steps.metadata.outputs.tag_name }}"
 
+      # ----------------------------------------
+      # Push latest
+      # ----------------------------------------
+      - name: Push latest image
+        run: |
           docker push \
             "ghcr.io/${{ steps.metadata.outputs.owner_lower }}/bwm-java-demo-k8s:latest"
-      
+
+      # ----------------------------------------
+      # Deployment repo work
+      # ----------------------------------------
       - name: Checkout Deployment Repo
-        run: echo "checked out"
+        run: |
+          echo "checked out"
 
       - name: Change tag in Deployment repo
-        run: echo "change tag"
+        run: |
+          echo "New image tag: ${{ github.ref_name }}"
